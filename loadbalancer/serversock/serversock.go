@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"time"
+	// "time"
 
 	"loadbalancer/cfgmgr"
 
@@ -34,7 +34,7 @@ func Run(exitChan chan struct{}, waitGroup *sync.WaitGroup) {
 }
 
 func (self *listenSock) onConnect(conn *tcpsock.TcpConn) tcpsock.TcpSession {
-	conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
+	// conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
 	return newServer(conn)
 }
 
