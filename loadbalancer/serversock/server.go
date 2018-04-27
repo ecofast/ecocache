@@ -3,10 +3,10 @@ package serversock
 import (
 	"errors"
 	"fmt"
-	"loadbalancer/cfgmgr"
+	// "loadbalancer/cfgmgr"
 	"loadbalancer/servers"
 	"log"
-	"time"
+	// "time"
 
 	. "protocols"
 
@@ -53,7 +53,7 @@ func (self *server) Read(b []byte) (n int, err error) {
 	offsize := 0
 	offset := 0
 	var head Head
-	for self.recvBufLen-offsize > SizeOfPacketHead {
+	for self.recvBufLen-offsize >= SizeOfPacketHead {
 		offset = 0
 		head.Len = uint32(uint32(self.recvBuf[offsize+3])<<24 | uint32(self.recvBuf[offsize+2])<<16 | uint32(self.recvBuf[offsize+1])<<8 | uint32(self.recvBuf[offsize+0]))
 		offset += 4
@@ -85,7 +85,7 @@ func (self *server) Read(b []byte) (n int, err error) {
 }
 
 func (self *server) process(cmd uint8, param uint16, body []byte) {
-	self.conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
+	// self.conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
 
 	switch cmd {
 	case CM_REGSVR:
