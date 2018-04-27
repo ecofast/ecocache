@@ -84,15 +84,9 @@ func (self *client) process(cmd uint8) {
 }
 
 func (self *client) Write(b []byte) (n int, err error) {
-	if self.onWrite != nil {
-		return self.onWrite(b)
-	}
-	return len(b), nil
+	return self.onWrite(b)
 }
 
 func (self *client) Close() error {
-	if self.onClose != nil {
-		return self.onClose()
-	}
-	return nil
+	return self.onClose()
 }
