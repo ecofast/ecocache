@@ -14,6 +14,14 @@ import (
 	"tcpsock.v2"
 )
 
+type svrMsg struct {
+	cmd   uint8
+	_     uint8
+	param uint16
+	_     uint32
+	next  *svrMsg
+}
+
 type lbSock struct {
 	*tcpsock.TcpClient
 	recvBuf    []byte
@@ -22,13 +30,13 @@ type lbSock struct {
 	reged      bool
 	pingCnt    uint8
 	lastTick   time.Time
+	mutex      sync.Mutex
+	headMsg    *svrMsg
+	tailMsg    *svrMsg
 }
 
 var (
-	sock *lbSock
-
 	doneChan = make(chan struct{})
-	ticker   *time.Ticker
 )
 
 func Setup() {
@@ -40,26 +48,63 @@ func Setup() {
 func Run(exitChan chan struct{}, waitGroup *sync.WaitGroup) {
 	defer waitGroup.Done()
 
-	sock = &lbSock{}
+	sock := &lbSock{}
 	sock.TcpClient = tcpsock.NewTcpClient(cfgmgr.LoadBalancerAddr(), sock.onConnect, sock.onDisconnect)
 	sock.Open()
 	sock.regSelf()
-	ticker = time.NewTicker(time.Second)
-	sock.checkConnect()
-	<-exitChan
-	ticker.Stop()
-	if sock.connected && sock.reged {
-		sock.unregSelf()
+	ticker := time.NewTicker(time.Second)
+	for {
 		select {
-		case <-doneChan:
-		case <-time.After(time.Second):
+		case <-exitChan:
+			ticker.Stop()
+			sock.unregSelf()
+			sock.Close()
+			return
+		case tick := <-ticker.C:
+			sock.checkConnect(tick)
+		default:
+			if !sock.processMsg() {
+				time.Sleep(10 * time.Millisecond)
+			}
 		}
 	}
-	sock.Close()
 }
 
 func (self *lbSock) SockHandle() uint64 {
 	return self.ID()
+}
+
+func (self *lbSock) getMsg() *svrMsg {
+	var msg *svrMsg
+	self.mutex.Lock()
+	if self.headMsg != nil {
+		msg = self.headMsg
+		self.headMsg = msg.next
+	}
+	if self.headMsg == nil {
+		self.tailMsg = nil
+	}
+	self.mutex.Unlock()
+	return msg
+}
+
+func (self *lbSock) clearMsgs() {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+	self.headMsg = nil
+	self.tailMsg = nil
+}
+
+func (self *lbSock) addMsg(msg *svrMsg) {
+	self.mutex.Lock()
+	defer self.mutex.Unlock()
+	if self.tailMsg != nil {
+		self.tailMsg.next = msg
+	}
+	if self.headMsg == nil {
+		self.headMsg = msg
+	}
+	self.tailMsg = msg
 }
 
 func (self *lbSock) onConnect(c *tcpsock.TcpConn) tcpsock.TcpSession {
@@ -73,34 +118,57 @@ func (self *lbSock) onConnect(c *tcpsock.TcpConn) tcpsock.TcpSession {
 func (self *lbSock) onDisconnect(c *tcpsock.TcpConn) {
 	self.connected = false
 	self.pingCnt = 0
+	self.clearMsgs()
 	log.Printf("disconnected from loadbalancer(%s)\n", c.RawConn().RemoteAddr().String())
 }
 
 // to do: GetTickCount
 //
-func (self *lbSock) checkConnect() {
-	go func() {
-		for tick := range ticker.C {
-			if !self.connected {
-				if tick.Sub(self.lastTick) >= time.Duration(cfgmgr.LoadBalancerReConnIntv())*time.Second {
-					self.lastTick = tick
-					self.Open()
-					sock.regSelf()
-				}
-			} else {
-				if tick.Sub(self.lastTick) >= time.Duration(cfgmgr.LoadBalancerPingIntv())*time.Second {
-					self.lastTick = tick
-					self.sendPing()
-					self.pingCnt++
-					if self.pingCnt >= 5 {
-						log.Println("no response from load balancer")
-						self.connected = false
-						self.Close()
-					}
-				}
+func (self *lbSock) checkConnect(tick time.Time) {
+	if !self.connected {
+		if tick.Sub(self.lastTick) >= time.Duration(cfgmgr.LoadBalancerReConnIntv())*time.Second {
+			self.lastTick = tick
+			self.Open()
+			self.regSelf()
+		}
+	} else {
+		if tick.Sub(self.lastTick) >= time.Duration(cfgmgr.LoadBalancerPingIntv())*time.Second {
+			self.lastTick = tick
+			self.sendPing()
+			self.pingCnt++
+			if self.pingCnt >= 5 {
+				log.Println("no response from load balancer")
+				self.connected = false
+				self.Close()
 			}
 		}
-	}()
+	}
+}
+
+func (self *lbSock) processMsg() bool {
+	msg := self.getMsg()
+	if msg != nil {
+		switch msg.cmd {
+		case SM_REGSVR:
+			self.reged = msg.param == 0
+			if self.reged {
+				log.Println("successfully registered to load balancer")
+			} else {
+				log.Println("register to load balancer failed")
+			}
+		case SM_DELSVR:
+			if msg.param == 0 {
+				log.Println("successfully unregistered from load balancer")
+			} else {
+				log.Println("unregister from load balancer failed")
+			}
+			doneChan <- struct{}{}
+		case SM_PING:
+			self.pingCnt = 0
+		}
+		return true
+	}
+	return false
 }
 
 func (self *lbSock) Read(b []byte) (n int, err error) {
@@ -147,22 +215,11 @@ func (self *lbSock) Read(b []byte) (n int, err error) {
 
 func (self *lbSock) process(cmd uint8, param uint16, body []byte) {
 	switch cmd {
-	case SM_REGSVR:
-		if param == 0 {
-			self.reged = true
-			log.Println("successfully registered to load balancer")
-		} else {
-			log.Println("register to load balancer failed")
-		}
-	case SM_DELSVR:
-		if param == 0 {
-			log.Println("successfully unregistered from load balancer")
-		} else {
-			log.Println("unregister from load balancer failed")
-		}
-		doneChan <- struct{}{}
-	case SM_PING:
-		self.pingCnt = 0
+	case SM_REGSVR, SM_DELSVR, SM_PING:
+		self.addMsg(&svrMsg{
+			cmd:   cmd,
+			param: param,
+		})
 	default:
 		fmt.Println("?????")
 		self.Close()
@@ -177,7 +234,13 @@ func (self *lbSock) regSelf() {
 }
 
 func (self *lbSock) unregSelf() {
-	self.send(CM_DELSVR, 0, nil)
+	if self.connected && self.reged {
+		self.send(CM_DELSVR, 0, nil)
+		select {
+		case <-doneChan:
+		case <-time.After(time.Second):
+		}
+	}
 }
 
 func (self *lbSock) sendPing() {
