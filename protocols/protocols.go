@@ -21,9 +21,6 @@ const (
 
 	CM_GET = 5
 	SM_GET = cCmSmDif + CM_GET
-
-	CM_MGET = 6
-	SM_MGET = cCmSmDif + CM_MGET
 )
 
 const (
