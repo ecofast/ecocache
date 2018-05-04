@@ -4,6 +4,8 @@ import (
 	"cacheserver/cfgmgr"
 	"cacheserver/clientsock"
 	"cacheserver/lbsock"
+	"cacheserver/lrucache"
+	"cacheserver/msgnode"
 	"fmt"
 	"log"
 	"os"
@@ -16,6 +18,8 @@ var (
 	shutdown  = make(chan bool, 1)
 	exitChan  = make(chan struct{})
 	waitGroup = &sync.WaitGroup{}
+
+	bucketChans []chan *msgnode.MsgNode
 )
 
 func init() {
@@ -35,15 +39,22 @@ func main() {
 
 func setup() {
 	cfgmgr.Setup()
+	lrucache.Setup()
 	lbsock.Setup()
 	clientsock.Setup()
+
+	bucketChans = make([]chan *msgnode.MsgNode, cfgmgr.NumLRUCache())
+	for i := 0; i < len(bucketChans); i++ {
+		bucketChans[i] = make(chan *msgnode.MsgNode)
+	}
 }
 
 func serve() {
 	log.Println("=====cacheserver service start=====")
-	waitGroup.Add(2)
+	waitGroup.Add(3)
+	go lrucache.Run(exitChan, bucketChans, waitGroup)
 	go lbsock.Run(exitChan, waitGroup)
-	go clientsock.Run(exitChan, waitGroup)
+	go clientsock.Run(exitChan, bucketChans, waitGroup)
 	<-shutdown
 	close(exitChan)
 	waitGroup.Wait()
