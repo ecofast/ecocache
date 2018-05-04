@@ -17,6 +17,8 @@ type config struct {
 	loadBalancerReConnIntv int
 	loadBalancerPingIntv   int
 	clientReadDeadline     int
+	numLRUCache            int
+	maxCacheBytesPerBucket int
 }
 
 var (
@@ -34,8 +36,11 @@ func Setup() {
 		loadBalancerReConnIntv: ini.ReadInt("LoadBalancer", "ReConnIntv", 10),
 		loadBalancerPingIntv:   ini.ReadInt("LoadBalancer", "PingIntv", 5),
 		clientReadDeadline:     ini.ReadInt("Client", "ReadDeadline", 15),
+		numLRUCache:            ini.ReadInt("Setup", "LRUCacheNum", 0),
+		maxCacheBytesPerBucket: ini.ReadInt("Cache", "MaxCacheBytesPerBucket", 100000000),
 	}
-	if isValidIP(cfg.publicIP) && isValidPort(cfg.publicPort) && isValidIP(cfg.loadBalancerIP) && isValidPort(cfg.loadBalancerPort) {
+	if isValidIP(cfg.publicIP) && isValidPort(cfg.publicPort) && isValidIP(cfg.loadBalancerIP) && isValidPort(cfg.loadBalancerPort) &&
+		cfg.numLRUCache > 0 && cfg.maxCacheBytesPerBucket > 0 {
 		log.Println("configuration has been loaded successfully")
 		return
 	}
@@ -72,4 +77,12 @@ func LoadBalancerPingIntv() int {
 
 func ClientReadDeadline() int {
 	return cfg.clientReadDeadline
+}
+
+func NumLRUCache() int {
+	return cfg.numLRUCache
+}
+
+func MaxCacheBytesPerBucket() int {
+	return cfg.maxCacheBytesPerBucket
 }
