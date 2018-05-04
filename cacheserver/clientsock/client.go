@@ -2,8 +2,11 @@ package clientsock
 
 import (
 	"cacheserver/cfgmgr"
+	"cacheserver/errcode"
+	"cacheserver/msgnode"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"time"
 
 	. "protocols"
@@ -15,23 +18,35 @@ type FnWrite = func(b []byte) (n int, err error)
 type FnClose = func() error
 
 type client struct {
-	conn       *tcpsock.TcpConn
-	onWrite    FnWrite
-	onClose    FnClose
-	recvBuf    []byte
-	recvBufLen int
+	conn        *tcpsock.TcpConn
+	onWrite     FnWrite
+	onClose     FnClose
+	recvBuf     []byte
+	recvBufLen  int
+	bucketChans []chan *msgnode.MsgNode
+	msgChan     chan *msgnode.MsgNode
 }
 
-func newClient(conn *tcpsock.TcpConn, fnWrite FnWrite, fnClose FnClose) *client {
-	return &client{
-		conn:    conn,
-		onWrite: fnWrite,
-		onClose: fnClose,
+func newClient(conn *tcpsock.TcpConn, fnWrite FnWrite, fnClose FnClose, bucketChans []chan *msgnode.MsgNode) *client {
+	c := &client{
+		conn:        conn,
+		onWrite:     fnWrite,
+		onClose:     fnClose,
+		bucketChans: bucketChans,
+		msgChan:     make(chan *msgnode.MsgNode),
 	}
+	go c.run()
+	return c
 }
 
 func (self *client) SockHandle() uint64 {
 	return self.conn.ID()
+}
+
+func (self *client) run() {
+	for node := range self.msgChan {
+		self.Write(NewPacket(node.Cmd, node.Param, node.Body).Bytes())
+	}
 }
 
 func (self *client) Read(b []byte) (n int, err error) {
@@ -82,18 +97,16 @@ func (self *client) process(cmd uint8, param uint16, body []byte) {
 	case CM_PING:
 		self.Write(NewPacket(SM_PING, 0, nil).Bytes())
 	case CM_GET:
-		self.processGet(param, body)
+		if int(param) >= len(body) {
+			self.Write(NewPacket(SM_GET, errcode.ErrInvalidGetReq, nil).Bytes())
+			return
+		}
+		idx := int(crc32.ChecksumIEEE(body[:param])) / len(self.bucketChans)
+		self.bucketChans[idx] <- msgnode.New(self.msgChan, cmd, param, body[param:])
 	default:
 		fmt.Println("?????")
 		self.Close()
 	}
-}
-
-// slot name
-// key name
-func (self *client) processGet(param uint16, body []byte) {
-	// param: len(slotname)
-	//
 }
 
 func (self *client) Write(b []byte) (n int, err error) {
