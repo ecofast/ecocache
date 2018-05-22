@@ -73,10 +73,10 @@ func (self *client) process(cmd uint8) {
 	switch cmd {
 	case CM_REQSVR:
 		if v := servers.Get(self.remoteAddr.String()); v != nil {
-			self.Write(NewPacket(SM_REQSVR, 0, v).Bytes())
+			self.Write(NewPacket(SM_REQSVR, 0, 0, v).Bytes())
 			return
 		}
-		self.Write(NewPacket(SM_REQSVR, 1, nil).Bytes())
+		self.Write(NewPacket(SM_REQSVR, 1, 0, nil).Bytes())
 	default:
 		fmt.Println("?????")
 		self.Close()
