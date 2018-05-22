@@ -9,6 +9,7 @@ import (
 
 func Setup() {
 	fmt.Printf("num of lru caches: %d\n", cfgmgr.NumLRUCache())
+	fmt.Printf("max entries per bucket: %d\n", cfgmgr.MaxEntries())
 	fmt.Printf("max cache bytes per bucket: %d\n", cfgmgr.MaxCacheBytesPerBucket())
 }
 
@@ -19,7 +20,7 @@ func Run(exitChan chan struct{}, bucketChans []chan *msgnode.MsgNode, waitGroup 
 	for i := 0; i < cfgmgr.NumLRUCache(); i++ {
 		wg.Add(1)
 		go func(i int) {
-			newCache(cfgmgr.MaxCacheBytesPerBucket(), bucketChans[i]).run(exitChan, wg)
+			newCache(i, cfgmgr.MaxEntries(), cfgmgr.MaxCacheBytesPerBucket(), bucketChans[i]).run(exitChan, wg)
 		}(i)
 	}
 
