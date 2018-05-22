@@ -5,36 +5,39 @@ import (
 )
 
 const (
-	cCmSmDif = 127
+	CmSmDif = 127
 
 	CM_REGSVR = 1
-	SM_REGSVR = cCmSmDif + CM_REGSVR
+	SM_REGSVR = CmSmDif + CM_REGSVR
 
 	CM_DELSVR = 2
-	SM_DELSVR = cCmSmDif + CM_DELSVR
+	SM_DELSVR = CmSmDif + CM_DELSVR
 
 	CM_REQSVR = 3
-	SM_REQSVR = cCmSmDif + CM_REQSVR
+	SM_REQSVR = CmSmDif + CM_REQSVR
 
 	CM_PING = 4
-	SM_PING = cCmSmDif + CM_PING
+	SM_PING = CmSmDif + CM_PING
 
 	CM_GET = 5
-	SM_GET = cCmSmDif + CM_GET
+	SM_GET = CmSmDif + CM_GET
+
+	CM_SET = 6
+	SM_SET = CmSmDif + CM_SET
 )
 
 const (
-	SizeOfPacketHeadLen      = 4
-	SizeOfPacketHeadCmd      = 1
-	SizeOfPacketHeadReserved = 1
-	SizeOfPacketHeadParam    = 2
-	SizeOfPacketHead         = SizeOfPacketHeadLen + SizeOfPacketHeadCmd + SizeOfPacketHeadReserved + SizeOfPacketHeadParam
+	SizeOfPacketHeadLen   = 4
+	SizeOfPacketHeadCmd   = 1
+	SizeOfPacketHeadRet   = 1
+	SizeOfPacketHeadParam = 2
+	SizeOfPacketHead      = SizeOfPacketHeadLen + SizeOfPacketHeadCmd + SizeOfPacketHeadRet + SizeOfPacketHeadParam
 )
 
 type Head struct {
 	Len   uint32
 	Cmd   uint8
-	_     uint8 // Reserved
+	Ret   uint8
 	Param uint16
 }
 
@@ -51,19 +54,20 @@ func (self *Packet) Bytes() []byte {
 	buf := make([]byte, SizeOfPacketHead+len(self.Body.Content))
 	binary.LittleEndian.PutUint32(buf, self.Len)
 	buf[SizeOfPacketHeadLen] = self.Cmd
-	// buf[SizeOfPacketHeadLen+SizeOfPacketHeadCmd] = self.Reserved
-	binary.LittleEndian.PutUint16(buf[SizeOfPacketHeadLen+SizeOfPacketHeadCmd+SizeOfPacketHeadReserved:], self.Param)
+	buf[SizeOfPacketHeadLen+SizeOfPacketHeadCmd] = self.Ret
+	binary.LittleEndian.PutUint16(buf[SizeOfPacketHeadLen+SizeOfPacketHeadCmd+SizeOfPacketHeadRet:], self.Param)
 	if len(self.Body.Content) > 0 {
 		copy(buf[SizeOfPacketHead:], self.Body.Content)
 	}
 	return buf
 }
 
-func NewPacket(cmd uint8, param uint16, content []byte) *Packet {
+func NewPacket(cmd, ret uint8, param uint16, content []byte) *Packet {
 	p := &Packet{
 		Head{
 			Len:   uint32(len(content)),
 			Cmd:   cmd,
+			Ret:   ret,
 			Param: param,
 		},
 		Body{
