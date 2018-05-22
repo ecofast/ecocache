@@ -15,11 +15,11 @@ import (
 )
 
 type svrMsg struct {
-	cmd   uint8
-	_     uint8
-	param uint16
-	_     uint32
-	next  *svrMsg
+	cmd  uint8
+	ret  uint8
+	_    uint16
+	_    uint32
+	next *svrMsg
 }
 
 type lbSock struct {
@@ -150,14 +150,14 @@ func (self *lbSock) processMsg() bool {
 	if msg != nil {
 		switch msg.cmd {
 		case SM_REGSVR:
-			self.reged = msg.param == 0
+			self.reged = msg.ret == 0
 			if self.reged {
 				log.Println("successfully registered to load balancer")
 			} else {
 				log.Println("register to load balancer failed")
 			}
 		case SM_DELSVR:
-			if msg.param == 0 {
+			if msg.ret == 0 {
 				log.Println("successfully unregistered from load balancer")
 			} else {
 				log.Println("unregister from load balancer failed")
@@ -188,7 +188,7 @@ func (self *lbSock) Read(b []byte) (n int, err error) {
 		offset += 4
 		head.Cmd = uint8(self.recvBuf[offsize+offset+0])
 		offset += 1
-		// head.Reserved = uint8(self.recvBuf[offsize+offset+0])
+		head.Ret = uint8(self.recvBuf[offsize+offset+0])
 		offset += 1
 		head.Param = uint16(uint16(self.recvBuf[offsize+offset+1])<<8 | uint16(self.recvBuf[offsize+offset+0]))
 		offset += 2
@@ -200,7 +200,7 @@ func (self *lbSock) Read(b []byte) (n int, err error) {
 		if offsize+pkglen > self.recvBufLen {
 			break
 		}
-		self.process(head.Cmd, head.Param, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
+		self.process(head.Cmd, head.Ret, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
 		offsize += pkglen
 	}
 
@@ -213,12 +213,12 @@ func (self *lbSock) Read(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func (self *lbSock) process(cmd uint8, param uint16, body []byte) {
+func (self *lbSock) process(cmd, ret uint8, body []byte) {
 	switch cmd {
 	case SM_REGSVR, SM_DELSVR, SM_PING:
 		self.addMsg(&svrMsg{
-			cmd:   cmd,
-			param: param,
+			cmd: cmd,
+			ret: ret,
 		})
 	default:
 		fmt.Println("?????")
@@ -230,12 +230,12 @@ func (self *lbSock) regSelf() {
 	bs := make([]byte, 6)
 	binary.LittleEndian.PutUint32(bs, netutils.IPv4ToUInt32(cfgmgr.PublicIP()))
 	binary.LittleEndian.PutUint16(bs[4:], uint16(cfgmgr.PublicPort()))
-	self.send(CM_REGSVR, 0, bs)
+	self.send(CM_REGSVR, bs)
 }
 
 func (self *lbSock) unregSelf() {
 	if self.connected && self.reged {
-		self.send(CM_DELSVR, 0, nil)
+		self.send(CM_DELSVR, nil)
 		select {
 		case <-doneChan:
 		case <-time.After(time.Second):
@@ -244,11 +244,11 @@ func (self *lbSock) unregSelf() {
 }
 
 func (self *lbSock) sendPing() {
-	self.send(CM_PING, 0, nil)
+	self.send(CM_PING, nil)
 }
 
-func (self *lbSock) send(cmd uint8, param uint16, body []byte) {
+func (self *lbSock) send(cmd uint8, body []byte) {
 	if self.connected {
-		self.Write(NewPacket(cmd, param, body).Bytes())
+		self.Write(NewPacket(cmd, 0, 0, body).Bytes())
 	}
 }
