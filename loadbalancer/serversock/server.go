@@ -59,9 +59,9 @@ func (self *server) Read(b []byte) (n int, err error) {
 		offset += 4
 		head.Cmd = uint8(self.recvBuf[offsize+offset+0])
 		offset += 1
-		// head.Reserved = uint8(self.recvBuf[offsize+offset+0])
+		// head.Ret = uint8(self.recvBuf[offsize+offset+0])
 		offset += 1
-		head.Param = uint16(uint16(self.recvBuf[offsize+offset+1])<<8 | uint16(self.recvBuf[offsize+offset+0]))
+		// head.Param = uint16(uint16(self.recvBuf[offsize+offset+1])<<8 | uint16(self.recvBuf[offsize+offset+0]))
 		offset += 2
 		pkglen := int(SizeOfPacketHead + head.Len)
 		if pkglen >= tcpsock.RecvBufLenMax {
@@ -71,7 +71,7 @@ func (self *server) Read(b []byte) (n int, err error) {
 		if offsize+pkglen > self.recvBufLen {
 			break
 		}
-		self.process(head.Cmd, head.Param, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
+		self.process(head.Cmd, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
 		offsize += pkglen
 	}
 
@@ -84,7 +84,7 @@ func (self *server) Read(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func (self *server) process(cmd uint8, param uint16, body []byte) {
+func (self *server) process(cmd uint8, body []byte) {
 	// self.conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
 
 	switch cmd {
@@ -93,7 +93,7 @@ func (self *server) process(cmd uint8, param uint16, body []byte) {
 	case CM_DELSVR:
 		self.delSvr()
 	case CM_PING:
-		self.Write(NewPacket(SM_PING, 0, nil).Bytes())
+		self.Write(NewPacket(SM_PING, 0, 0, nil).Bytes())
 	default:
 		fmt.Println("?????")
 		self.Close()
@@ -117,22 +117,22 @@ func (self *server) Close() error {
 
 func (self *server) regSvr(b []byte) {
 	if len(b) != SizeOfIPv4+SizeOfPort {
-		self.Write(NewPacket(SM_REGSVR, 1, nil).Bytes())
+		self.Write(NewPacket(SM_REGSVR, 1, 0, nil).Bytes())
 		return
 	}
 	servers.Store(self.conn.RawConn().RemoteAddr().String(), b)
-	self.Write(NewPacket(SM_REGSVR, 0, nil).Bytes())
+	self.Write(NewPacket(SM_REGSVR, 0, 0, nil).Bytes())
 	// addr := netutils.UInt32ToIPv4(sysutils.BytesToUInt32(b[:4])) + ":" + sysutils.IntToStr(int(sysutils.BytesToUInt16(b[4:])))
-	// log.Printf("cache server %s registered", addr)
+	// log.Printf("cache server %s registered\n", addr)
 	log.Printf("num of cache server: %d\n", servers.Count())
 }
 
 func (self *server) delSvr() {
 	if self.unreg() {
-		self.Write(NewPacket(SM_DELSVR, 0, nil).Bytes())
+		self.Write(NewPacket(SM_DELSVR, 0, 0, nil).Bytes())
 		return
 	}
-	self.Write(NewPacket(SM_DELSVR, 1, nil).Bytes())
+	self.Write(NewPacket(SM_DELSVR, 1, 0, nil).Bytes())
 }
 
 func (self *server) unreg() bool {
