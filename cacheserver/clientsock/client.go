@@ -4,9 +4,9 @@ import (
 	"cacheserver/cfgmgr"
 	"cacheserver/errcode"
 	"cacheserver/msgnode"
+	"cacheserver/utils"
 	"errors"
 	"fmt"
-	"hash/crc32"
 	"time"
 
 	. "protocols"
@@ -45,7 +45,7 @@ func (self *client) SockHandle() uint64 {
 
 func (self *client) run() {
 	for node := range self.msgChan {
-		self.Write(NewPacket(node.Cmd, node.Param, node.Body).Bytes())
+		self.Write(NewPacket(node.Cmd, node.Ret, node.Param, node.Body).Bytes())
 	}
 }
 
@@ -66,7 +66,7 @@ func (self *client) Read(b []byte) (n int, err error) {
 		offset += 4
 		head.Cmd = uint8(self.recvBuf[offsize+offset+0])
 		offset += 1
-		// head.Reserved = uint8(self.recvBuf[offsize+offset+0])
+		head.Ret = uint8(self.recvBuf[offsize+offset+0])
 		offset += 1
 		head.Param = uint16(uint16(self.recvBuf[offsize+offset+1])<<8 | uint16(self.recvBuf[offsize+offset+0]))
 		offset += 2
@@ -78,7 +78,7 @@ func (self *client) Read(b []byte) (n int, err error) {
 		if offsize+pkglen > self.recvBufLen {
 			break
 		}
-		self.process(head.Cmd, head.Param, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
+		self.process(head.Cmd, head.Ret, head.Param, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
 		offsize += SizeOfPacketHead
 	}
 
@@ -91,18 +91,18 @@ func (self *client) Read(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func (self *client) process(cmd uint8, param uint16, body []byte) {
+func (self *client) process(cmd, ret uint8, param uint16, body []byte) {
 	self.conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ClientReadDeadline()) * time.Second))
 	switch cmd {
 	case CM_PING:
-		self.Write(NewPacket(SM_PING, 0, nil).Bytes())
-	case CM_GET:
-		if int(param) >= len(body) {
-			self.Write(NewPacket(SM_GET, errcode.ErrInvalidGetReq, nil).Bytes())
+		self.Write(NewPacket(SM_PING, 0, 0, nil).Bytes())
+	case CM_GET, CM_SET:
+		if int(uint8(param>>8)+uint8(param)) > len(body) {
+			self.Write(NewPacket(cmd+CmSmDif, errcode.ErrInvalidReqParam, param, body).Bytes())
 			return
 		}
-		idx := int(crc32.ChecksumIEEE(body[:param])) / len(self.bucketChans)
-		self.bucketChans[idx] <- msgnode.New(self.msgChan, cmd, param, body[param:])
+		idx := utils.GetBucketIndex(body[:uint8(param>>8)], len(self.bucketChans))
+		self.bucketChans[idx] <- msgnode.New(self.msgChan, cmd, ret, param, body)
 	default:
 		fmt.Println("?????")
 		self.Close()
