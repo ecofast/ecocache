@@ -3,14 +3,13 @@ package serversock
 import (
 	"errors"
 	"fmt"
-	// "loadbalancer/cfgmgr"
-	"loadbalancer/servers"
 	"log"
-	// "time"
+	"time"
 
-	. "protocols"
-
-	"tcpsock.v2"
+	"github.com/ecofast/ecocache/loadbalancer/cfgmgr"
+	"github.com/ecofast/ecocache/loadbalancer/servers"
+	. "github.com/ecofast/ecocache/protocols"
+	"github.com/ecofast/tcpsock.v2"
 )
 
 const (
@@ -85,7 +84,7 @@ func (self *server) Read(b []byte) (n int, err error) {
 }
 
 func (self *server) process(cmd uint8, body []byte) {
-	// self.conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
+	self.conn.RawConn().SetReadDeadline(time.Now().Add(time.Duration(cfgmgr.ServerReadDeadline()) * time.Second))
 
 	switch cmd {
 	case CM_REGSVR:
@@ -101,18 +100,12 @@ func (self *server) process(cmd uint8, body []byte) {
 }
 
 func (self *server) Write(b []byte) (n int, err error) {
-	if self.onWrite != nil {
-		return self.onWrite(b)
-	}
-	return len(b), nil
+	return self.onWrite(b)
 }
 
 func (self *server) Close() error {
 	self.unreg()
-	if self.onClose != nil {
-		return self.onClose()
-	}
-	return nil
+	return self.onClose()
 }
 
 func (self *server) regSvr(b []byte) {

@@ -5,9 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"loadbalancer/cfgmgr"
-
-	"tcpsock.v2"
+	"github.com/ecofast/ecocache/loadbalancer/cfgmgr"
+	"github.com/ecofast/tcpsock.v2"
 )
 
 type listenSock struct {
@@ -20,6 +19,7 @@ var (
 
 func Setup() {
 	fmt.Printf("client listen port: %d\n", cfgmgr.ClientListenPort())
+	fmt.Printf("client read deadline: %d(s)\n", cfgmgr.ClientReadDeadline())
 }
 
 func Run(exitChan chan struct{}, waitGroup *sync.WaitGroup) {

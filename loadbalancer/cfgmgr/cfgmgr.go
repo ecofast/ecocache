@@ -28,7 +28,7 @@ func Setup() {
 		serverReadDeadline: ini.ReadInt("Server", "ReadDeadline", 5),
 		serverReplicas:     ini.ReadInt("Server", "Replicas", 50),
 		clientListenPort:   ini.ReadInt("Client", "ListenPort", 12321),
-		clientReadDeadline: ini.ReadInt("Client", "ReadDeadline", 1),
+		clientReadDeadline: ini.ReadInt("Client", "ReadDeadline", 2),
 	}
 	log.Println("configuration has been loaded successfully")
 }

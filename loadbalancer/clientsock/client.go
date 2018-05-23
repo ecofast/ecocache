@@ -3,12 +3,11 @@ package clientsock
 import (
 	"errors"
 	"fmt"
-	"loadbalancer/servers"
 	"net"
 
-	. "protocols"
-
-	"tcpsock.v2"
+	"github.com/ecofast/ecocache/loadbalancer/servers"
+	. "github.com/ecofast/ecocache/protocols"
+	"github.com/ecofast/tcpsock.v2"
 )
 
 type FnWrite = func(b []byte) (n int, err error)

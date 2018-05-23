@@ -2,15 +2,16 @@ package main
 
 import (
 	"fmt"
-	"loadbalancer/cfgmgr"
-	"loadbalancer/clientsock"
-	"loadbalancer/servers"
-	"loadbalancer/serversock"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/ecofast/ecocache/loadbalancer/cfgmgr"
+	"github.com/ecofast/ecocache/loadbalancer/clientsock"
+	"github.com/ecofast/ecocache/loadbalancer/servers"
+	"github.com/ecofast/ecocache/loadbalancer/serversock"
 )
 
 var (

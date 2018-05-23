@@ -1,9 +1,10 @@
 package servers
 
 import (
-	"consistenthash"
-	"loadbalancer/cfgmgr"
 	"sync"
+
+	"github.com/ecofast/ecocache/consistenthash"
+	"github.com/ecofast/ecocache/loadbalancer/cfgmgr"
 )
 
 var (
