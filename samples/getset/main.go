@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"os"
 	"os/signal"
-	. "protocols"
 	"strings"
 	"syscall"
+
+	. "github.com/ecofast/ecocache/protocols"
 )
 
 var (

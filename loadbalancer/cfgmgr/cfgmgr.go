@@ -25,7 +25,7 @@ func Setup() {
 	ini := inifiles.New(iniName, false)
 	cfg = &config{
 		serverListenPort:   ini.ReadInt("Server", "ListenPort", 24642),
-		serverReadDeadline: ini.ReadInt("Server", "ReadDeadline", 5),
+		serverReadDeadline: ini.ReadInt("Server", "ReadDeadline", 15),
 		serverReplicas:     ini.ReadInt("Server", "Replicas", 50),
 		clientListenPort:   ini.ReadInt("Client", "ListenPort", 12321),
 		clientReadDeadline: ini.ReadInt("Client", "ReadDeadline", 2),

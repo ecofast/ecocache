@@ -1,17 +1,18 @@
 package main
 
 import (
-	"cacheserver/cfgmgr"
-	"cacheserver/clientsock"
-	"cacheserver/lbsock"
-	"cacheserver/lrucache"
-	"cacheserver/msgnode"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
+
+	"github.com/ecofast/ecocache/cacheserver/cfgmgr"
+	"github.com/ecofast/ecocache/cacheserver/clientsock"
+	"github.com/ecofast/ecocache/cacheserver/lbsock"
+	"github.com/ecofast/ecocache/cacheserver/lrucache"
+	"github.com/ecofast/ecocache/cacheserver/msgnode"
 )
 
 var (

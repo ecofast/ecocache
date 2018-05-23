@@ -65,6 +65,10 @@ func PublicPort() uint16 {
 	return uint16(cfg.publicPort)
 }
 
+func PublicAddr() string {
+	return fmt.Sprintf("%s:%d", cfg.publicIP, cfg.publicPort)
+}
+
 func LoadBalancerAddr() string {
 	return fmt.Sprintf("%s:%d", cfg.loadBalancerIP, cfg.loadBalancerPort)
 }

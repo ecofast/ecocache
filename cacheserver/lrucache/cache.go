@@ -1,12 +1,13 @@
 package lrucache
 
 import (
-	"cacheserver/errcode"
-	"cacheserver/msgnode"
-	"cacheserver/utils"
-	"lru"
-	. "protocols"
 	"sync"
+
+	"github.com/ecofast/ecocache/cacheserver/errcode"
+	"github.com/ecofast/ecocache/cacheserver/msgnode"
+	"github.com/ecofast/ecocache/cacheserver/utils"
+	"github.com/ecofast/ecocache/lru"
+	. "github.com/ecofast/ecocache/protocols"
 )
 
 func newCache(index int, maxEntries, cacheBytes int, msgChan <-chan *msgnode.MsgNode) *cache {

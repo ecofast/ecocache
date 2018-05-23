@@ -1,10 +1,11 @@
 package lrucache
 
 import (
-	"cacheserver/cfgmgr"
-	"cacheserver/msgnode"
 	"fmt"
 	"sync"
+
+	"github.com/ecofast/ecocache/cacheserver/cfgmgr"
+	"github.com/ecofast/ecocache/cacheserver/msgnode"
 )
 
 func Setup() {

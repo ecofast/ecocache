@@ -5,10 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"cacheserver/cfgmgr"
-	"cacheserver/msgnode"
-
-	"tcpsock.v2"
+	"github.com/ecofast/ecocache/cacheserver/cfgmgr"
+	"github.com/ecofast/ecocache/cacheserver/msgnode"
+	"github.com/ecofast/tcpsock.v2"
 )
 
 type listenSock struct {
@@ -21,7 +20,7 @@ var (
 )
 
 func Setup() {
-	fmt.Printf("client listen port: %d\n", cfgmgr.PublicPort())
+	fmt.Printf("public addr: %s\n", cfgmgr.PublicAddr())
 }
 
 func Run(exitChan chan struct{}, bucketChans []chan *msgnode.MsgNode, waitGroup *sync.WaitGroup) {

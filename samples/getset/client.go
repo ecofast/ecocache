@@ -6,10 +6,9 @@ import (
 	"log"
 	"time"
 
-	"cacheserver/utils"
-	. "protocols"
-
-	"tcpsock.v2"
+	"github.com/ecofast/ecocache/cacheserver/utils"
+	. "github.com/ecofast/ecocache/protocols"
+	"github.com/ecofast/tcpsock.v2"
 )
 
 type client struct {
@@ -75,7 +74,7 @@ func (self *client) Read(b []byte) (n int, err error) {
 			break
 		}
 		self.process(head.Cmd, head.Ret, head.Param, self.recvBuf[offsize+offset:offsize+offset+int(head.Len)])
-		offsize += SizeOfPacketHead
+		offsize += pkglen
 	}
 
 	self.recvBufLen -= offsize

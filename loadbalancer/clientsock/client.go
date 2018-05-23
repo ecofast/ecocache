@@ -46,7 +46,7 @@ func (self *client) Read(b []byte) (n int, err error) {
 	offsize := 0
 	offset := 0
 	var head Head
-	for self.recvBufLen-offsize > SizeOfPacketHead {
+	for self.recvBufLen-offsize >= SizeOfPacketHead {
 		offset = 0
 		head.Len = uint32(uint32(self.recvBuf[offsize+3])<<24 | uint32(self.recvBuf[offsize+2])<<16 | uint32(self.recvBuf[offsize+1])<<8 | uint32(self.recvBuf[offsize+0]))
 		if head.Len != 0 {

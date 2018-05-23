@@ -1,17 +1,17 @@
 package lbsock
 
 import (
-	"cacheserver/cfgmgr"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"log"
-	. "protocols"
 	"sync"
 	"time"
 
+	"github.com/ecofast/ecocache/cacheserver/cfgmgr"
+	. "github.com/ecofast/ecocache/protocols"
 	"github.com/ecofast/rtl/netutils"
-	"tcpsock.v2"
+	"github.com/ecofast/tcpsock.v2"
 )
 
 type svrMsg struct {
@@ -41,8 +41,8 @@ var (
 
 func Setup() {
 	fmt.Printf("load balancer addr: %s\n", cfgmgr.LoadBalancerAddr())
-	fmt.Printf("load balancer reconnect interval: %d\n", cfgmgr.LoadBalancerReConnIntv())
-	fmt.Printf("load balancer ping interval: %d\n", cfgmgr.LoadBalancerPingIntv())
+	fmt.Printf("load balancer reconnect interval: %d(s)\n", cfgmgr.LoadBalancerReConnIntv())
+	fmt.Printf("load balancer ping interval: %d(s)\n", cfgmgr.LoadBalancerPingIntv())
 }
 
 func Run(exitChan chan struct{}, waitGroup *sync.WaitGroup) {
