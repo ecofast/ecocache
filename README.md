@@ -6,7 +6,7 @@ It's inspired by google's [groupcache](https://github.com/golang/groupcache) pro
 ![image](https://github.com/ecofast/ecocache/blob/master/ecocache.png)</br></br>
 
 # Benchmark
-![image](https://github.com/ecofast/ecocache/blob/master/cacheserver_win7.jpg)</br>
-![image](https://github.com/ecofast/ecocache/blob/master/cacheserver_centos7.jpg)</br></br>
+![image](https://github.com/ecofast/ecocache/blob/master/cacheserver_win7.jpg)
+![image](https://github.com/ecofast/ecocache/blob/master/cacheserver_centos7.png)</br></br>
 
 **Note that this is still early alpha code and needs further development / bug-fix in many place.**
