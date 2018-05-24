@@ -5,4 +5,8 @@ It's inspired by google's [groupcache](https://github.com/golang/groupcache) pro
 # Architecture
 ![image](https://github.com/ecofast/ecocache/blob/master/ecocache.png)</br></br>
 
-**Note that this is still early alpha code and needs further development in many place.**
+# Benchmark
+![image](https://github.com/ecofast/ecocache/blob/master/cacheserver_win7.jpg)
+![image](https://github.com/ecofast/ecocache/blob/master/cacheserver_centos7.jpg)</br></br>
+
+**Note that this is still early alpha code and needs further development / bug-fix in many place.**
