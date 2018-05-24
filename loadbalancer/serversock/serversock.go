@@ -2,11 +2,13 @@ package serversock
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/ecofast/ecocache/loadbalancer/cfgmgr"
+	"github.com/ecofast/ecocache/loadbalancer/servers"
 	"github.com/ecofast/tcpsock.v2"
 )
 
@@ -40,7 +42,9 @@ func (self *listenSock) onConnect(conn *tcpsock.TcpConn) tcpsock.TcpSession {
 }
 
 func (self *listenSock) onDisconnect(conn *tcpsock.TcpConn) {
-	//
+	if servers.Remove(conn.RawConn().RemoteAddr().String()) {
+		log.Printf("num of cache server: %d\n", servers.Count())
+	}
 }
 
 func (self *listenSock) onCheckIP(ip net.Addr) bool {

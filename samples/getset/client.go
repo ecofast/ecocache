@@ -8,6 +8,8 @@ import (
 
 	"github.com/ecofast/ecocache/cacheserver/utils"
 	. "github.com/ecofast/ecocache/protocols"
+	// "github.com/ecofast/rtl/netutils"
+	// "github.com/ecofast/rtl/sysutils"
 	"github.com/ecofast/tcpsock.v2"
 )
 
@@ -104,6 +106,21 @@ func (self *client) process(cmd, ret uint8, param uint16, body []byte) {
 		k := utils.BytesToStr(body[uint8(param>>8) : uint8(param>>8)+uint8(param)])
 		v := utils.BytesToStr(body[uint8(param>>8)+uint8(param):])
 		fmt.Printf("SM_SET: %s.%s=%s", bucket, k, v)
+	/*
+		case SM_REQSVR:
+			if ret == 0 && len(body) == 6 {
+				ip := netutils.UInt32ToIPv4(sysutils.BytesToUInt32(body[:4]))
+				port := sysutils.BytesToUInt16(body[4:])
+				addr := fmt.Sprintf("%s:%d", ip, port)
+				fmt.Printf("SM_REQSVR: addr=%s\n", addr)
+				cli = newTcpClient(addr, true)
+				cli.Open()
+				self.Close()
+				return
+			}
+			self.Close()
+			fmt.Println("SM_REQSVR: addr=nil")
+	*/
 	default:
 		fmt.Println("?????")
 		self.Close()

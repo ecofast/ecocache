@@ -2,6 +2,7 @@ package clientsock
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -30,6 +31,7 @@ func Run(exitChan chan struct{}, bucketChans []chan *msgnode.MsgNode, waitGroup 
 	sock.TcpServer = tcpsock.NewTcpServer(fmt.Sprintf(":%d", cfgmgr.PublicPort()), sock.onConnect, sock.onDisconnect, nil)
 	sock.bucketChans = bucketChans
 	sock.Serve()
+	go sock.printNumOfConn()
 	<-exitChan
 	sock.Close()
 }
@@ -41,4 +43,11 @@ func (self *listenSock) onConnect(conn *tcpsock.TcpConn) tcpsock.TcpSession {
 
 func (self *listenSock) onDisconnect(conn *tcpsock.TcpConn) {
 	//
+}
+
+func (self *listenSock) printNumOfConn() {
+	ticker := time.NewTicker(10 * time.Second)
+	for range ticker.C {
+		log.Println("num of conn:", self.Count())
+	}
 }

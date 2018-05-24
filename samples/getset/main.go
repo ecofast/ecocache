@@ -33,7 +33,9 @@ func main() {
 	cli.Open()
 	go run()
 	<-shutdown
-	cli.Close()
+	if cli != nil {
+		cli.Close()
+	}
 }
 
 func run() {
